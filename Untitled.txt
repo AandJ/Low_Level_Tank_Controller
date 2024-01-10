@@ -1,0 +1,27 @@
+int main()
+{
+    Serial_Comms PC(USBTX, USBRX);
+}
+
+
+    class Serial_Comms {
+        public:
+            Serial_Comms{    
+              node.getparam(Tx)
+              node.getparam(rx)
+            }
+
+        int update(pin rx, pin tx)
+
+        private:
+            // define serial objects and function needed to change its parameters
+            UnbufferedSerial pc(randpin, randpin);                              // Serial object to be used for Serial_Comms
+            int num;
+            ros::ros node_;
+    };
+
+    int Serial_Comms::update(pin rx, pin tx)
+{
+    // Update and overide the existing object
+    this->pc = UnbufferedSerial(rx, tx);    //this is demo method, wont actually work
+}
