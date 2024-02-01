@@ -4,7 +4,7 @@
 
 #include "BSPSensors.hpp"
 #include "Serial_Comms.hpp"
-// #include "SPI_LCD.hpp"
+#include "SPI_LCD.hpp"
 #include "Motor_Control.hpp"
 
 /********************************************************************************/
@@ -26,9 +26,9 @@
 
 
 /********************************************************************************/
-/************************ Thread and Event que definitions***********************/
+/********************** Thread and Event queue definitions **********************/
 /********************************************************************************/
-EventQueue EventQueue_1(32 * EVENTS_EVENT_SIZE);    //Event queue used for SPI events  
+// EventQueue EventQueue_1(32 * EVENTS_EVENT_SIZE);    //Event queue used for SPI events such as pritning to the LCD
 /********************************************************************************/
 
 
@@ -37,13 +37,12 @@ EventQueue EventQueue_1(32 * EVENTS_EVENT_SIZE);    //Event queue used for SPI e
 /************ Create objects and threads for attached peripherals ***************/
 /********************************************************************************/
 
-// // Create Object of serial communication class with Set USBTX and USBRX pins
-// // This handles the Serial Connection with the PC in debug and with the Pi in Release
+// Create Object of serial communication class with Set USBTX and USBRX pins
+// This handles the Serial Connection with the PC in debug and with the Pi in Release
 void command_Handler(int Data); // Function called to handle data recived from PC object
-Serial_Comms PC(USBTX, USBRX, command_Handler);
-
-/********************************************************************************/
+Serial_Comms PC(USBTX, USBRX, 9600, command_Handler);
   
+//
 Motor_Control motor( ENA1, IN1, IN2, ENA2, IN3, IN4);
 Motor_State Determine_State(char cmd);
 
@@ -54,28 +53,18 @@ Motor_State Determine_State(char cmd);
 // Create SPI_LCD_Class object to allow printing debug information to onboard LCD Display
 // SPI_LCD_Class LCD(D10, D11, D12, D13, &EventQueue_1); //CS, Mosi, Miso, SCLK, and a pointer to the event que to handle events
 
+
 /********************************************************************************/
   
 
 // Command called to handle recieved USB data and pass commands on to motors
 void command_Handler(int Data)
 {
-    // led_1 = !led_1;
-
-    //return int
-    // char buffer[250];
-    // int len = sprintf(buffer, "Val - %d\n", Data); //, Sensor_Data.AccDataXYZ[1], Sensor_Data.AccDataXYZ[2]);      
-    // std::string S;
-    // for (int i = 0; i < len; i++) {
-    //     S = S + buffer[i];
-    // }
-    // PC.Print(S);
-
-    // // in final version int is 32 bits first 4 bits are direction commands, then 24 bits for the speed commands (12 bit command per motor), and the last four bits are a checksum
+    // Input int command is 32 bits first 4 bits are direction commands, then 24 bits for the speed commands (12-bit command per motor), and the last four bits will be a checksum
     char Direction_Commands = ( (Data & 0xF0000000) >> 28 );
     short Right_Speed_Command = ( (Data & 0x0FFF0000) >> 16 );
     short Left_Speed_Command = ( (Data & 0x0000FFF0) >>  4 );
-    char Misc = ( Data & 0x0000000F );
+    char Checksum = ( Data & 0x0000000F );  // Currently not used
 
     Motor_State Right_Motor_State = Determine_State(Direction_Commands & 0x3);
     Motor_State Left_Motor_State = Determine_State((Direction_Commands >> 2) & 0x3);
@@ -87,7 +76,6 @@ void command_Handler(int Data)
     motor.set_left_motor_speed(float(Left_Speed_Command) / 4095);
 
     return;
-
 }
 
 
@@ -124,61 +112,12 @@ Motor_State Determine_State(char cmd)
 
 int main()
 {
-    while(1) {
-        // led_2 = !led_2;
-        // PC.Print("would be sensor data\n");    
-        // ThisThread::sleep_for(100);
-    }
+    while(1)
+    {
+        // Disptach the event queue for LCD commands
+        // EventQueue_1.dispatch_forever();
+    }   
 }
 
 /********************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
-         // while(1)
-        // {
-        //     EventQueue_1.dispatch_forever();
-        // }   
-
-
-
-        //  debug 
-        // BSPSensor_Data_Struct Sensor_Data;
-        // Sensor_Data = BSPSensors.get_sensor_data();
-
-        // char buffer[250];
-        // int len = sprintf(buffer, "X - %d\n", Sensor_Data.AccDataXYZ[0]); //, Sensor_Data.AccDataXYZ[1], Sensor_Data.AccDataXYZ[2]);      
-        // std::string S;
-        // for (int i = 0; i < len; i++) {
-        //     S = S + buffer[i];
-        // }
-        // PC.Print(S);       
-
-        // // ThisThread::sleep_for(200);
-
-        // int len2 = sprintf(buffer, "Y - %d\n", Sensor_Data.AccDataXYZ[1]); //, Sensor_Data.AccDataXYZ[1], Sensor_Data.AccDataXYZ[2]);      
-        // std::string S2;
-        // for (int i = 0; i < len2; i++) {
-        //     S2 = S2 + buffer[i];
-        // }
-        // PC.Print(S2);    
-
-        // // ThisThread::sleep_for(200);
-
-        // int len3 = sprintf(buffer, "Z - %d\n", Sensor_Data.AccDataXYZ[2]); //, Sensor_Data.AccDataXYZ[1], Sensor_Data.AccDataXYZ[2]);      
-        // std::string S3;
-        // for (int i = 0; i < len3; i++) {
-        //     S3 = S3 + buffer[i];
-        // }
-        // PC.Print(S3);    
-
-        // // PC.Print("Test line 3\n");    
-        // // PC.Print("Test line 2\n");  

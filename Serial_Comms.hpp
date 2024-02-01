@@ -29,18 +29,20 @@ through function of the Serial_Comms class.
     // Class Serial_Comms expects tx and rx pins and is used for controlling a serialy conected Serial_Comms
     class Serial_Comms {
         public:
-            Serial_Comms(PinName tx, PinName rx, const std::function<void(int)> & Recieved_Command_Handler) : pc(tx, rx), Recieved_Command_Handler_(Recieved_Command_Handler)
+            Serial_Comms(PinName tx, PinName rx, int baudrate, const std::function<void(int)> & Recieved_Command_Handler) : pc(tx, rx), Baudrate(baudrate), Recieved_Command_Handler_(Recieved_Command_Handler)
             {    
+                // Start the thread to handle serial communication
                 Serial_Comms_Thread.start(callback(this, &Serial_Comms::Serial_Comms_Thread_main));      
             }
 
-            void init(void);                                // Initialise Serial_Comms and start all timers/interupts
-            void Print(std::string string); // Queues the recieved string to be printed when Comms next available
+            void init(void);                // Initialise Serial_Comms and start all timers/interupts
+            void Print(std::string string); // Queues a recieved string to be sent when Comms next available
 
 
         private:
             // define serial objects and function needed to change its parameters
-            UnbufferedSerial pc;                              // Serial object to be used for Serial_Comms
+            int Baudrate;
+            UnbufferedSerial pc;                 // Serial object to be used for Serial_Comms
             // Mutex Serial_Mutex;
             Thread Serial_Comms_Thread;
             void Serial_Comms_Thread_main(void);
@@ -56,7 +58,7 @@ through function of the Serial_Comms class.
             char buffer_pointer_In;                 // stores current point in Serial_Comms input line
             char Serial_Comms_buffer_In[30];       // Buffer to store command
 
-            std::function<void(int)> Recieved_Command_Handler_;
+            std::function<void(int)> Recieved_Command_Handler_; // Stores the function to be called when data is recieved
     };
     
 #endif
