@@ -7,11 +7,11 @@ through function of the Serial_Comms class.
 #include<string>
 
 #define brake 0
-#define foward 1
+#define forward 1
 #define backward 2
 #define floating 3
 
-enum Motor_Dir { spring, summer, autumn, winter };
+enum Motor_State { Brake, Forward, Backward, Floating };
 
 #ifndef Define_ONCE_Motor_Control
 #define Define_ONCE_Motor_Control
@@ -28,7 +28,7 @@ enum Motor_Dir { spring, summer, autumn, winter };
     // Class Serial_Comms expects tx and rx pins and is used for controlling a serialy conected Serial_Comms
     class Motor_Control {
         public:
-            Motor_Control(PinName ENA1, PinName IN1, PinName IN2, PinName ENA2, PinName IN3, PinName IN4) : Right_Motor_Speed(ENA1), Right_Motor_Direction(IN1,IN2), Left_Motor_Speed(ENA2), Left_Motor_Direction(IN3,IN4)
+            Motor_Control(PinName RM_1, PinName RM_2, PinName RM_3, PinName LM_1, PinName LM_2, PinName LM_3) : Right_Motor_Speed(RM_1), Right_Motor_Direction(RM_2,RM_3), Left_Motor_Speed(LM_1), Left_Motor_Direction(LM_2,LM_3)
             {
                 Right_Motor_Direction = brake;
                 Left_Motor_Direction = brake;
@@ -36,13 +36,20 @@ enum Motor_Dir { spring, summer, autumn, winter };
                 Left_Motor_Speed = 0;
             }
 
+            void set_right_motor_speed(float Speed);
+            void set_left_motor_speed(float Speed);
+
+            void set_right_motor_direction(Motor_State State);
+            void set_left_motor_direction(Motor_State State);
+
+        private:
+
             BusOut Right_Motor_Direction;
             PwmOut Right_Motor_Speed;
 
             BusOut Left_Motor_Direction;
             PwmOut Left_Motor_Speed;
 
-        private:
         };
     
 #endif

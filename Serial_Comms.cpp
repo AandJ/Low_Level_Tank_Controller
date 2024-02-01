@@ -14,7 +14,9 @@ to control the Serial_Comms with the PC or Raspberry Pi
 //Define external LCD for debug output
 // extern SPI_LCD_Class LCD; //CS, Mosi, Miso, SCLK
 // // Debug LED
-// DigitalOut debug_led(LED1);
+DigitalOut debug_led(LED1);
+DigitalOut debug_led_2(LED2);
+
 
 // queue for serial comms events, need to find a way to move this within serial comm class
 EventQueue Serial_Comms_Queue(32 * EVENTS_EVENT_SIZE);
@@ -32,7 +34,7 @@ void Serial_Comms::init(void)
     // buffer_pointer_Out = 0;
 
     //Turn Debug LED off
-    // debug_led = 0;
+    debug_led = 0;
 
     // Attach interupts
     pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
@@ -45,32 +47,51 @@ void Serial_Comms::init(void)
 ------------------------------------------------------------------------------*/
 void Serial_Comms::checkKEY(void)
 {
-    char gotkey; 
+    // char gotkey; 
     
-    pc.read(&gotkey, 1);
+    // pc.read(&gotkey, 1);
 
-    // If recieved key is invalid, ignore
-    if(gotkey == NULL) 
-    {
-        // do nothing
-        pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
 
-    }  // If recieved key is carridge return the execute the stored command
-    else if (gotkey == 0x0D) 
-    {
-        // debug_led = !debug_led;
-        Serial_Comms_buffer_In[buffer_pointer_In] = 0x00;
+    //     // Fill debug string
+    //     std::string S;
+    //     char buffer[100];
+    //     int len = sprintf(buffer, "value is %x \n", gotkey);
+    //     for (int i = 0; i < len; i++) {
+    //         S = S + buffer[i];
+    //     }
 
-        Serial_Comms_Queue.call(this, &Serial_Comms::Decode_Command);
+    //     // Fill debug string
+    //     // std::string S(1, gotkey);
 
-    } 
-    else // Store recieved key in serial comm buffer
-    {
-        Serial_Comms_buffer_In[buffer_pointer_In] = gotkey;
-        buffer_pointer_In++;
+    //     // S = "value is " + gotkey + "\n";
 
-        pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
-    }
+    //     Print(S);
+
+    // // // If recieved key is invalid, ignore
+    // // if(gotkey == NULL) 
+    // // {
+    // //     // do nothing
+    // //     pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
+
+    // // }  // If recieved key is carridge return the execute the stored command
+    // // else if (gotkey == 0x0D) 
+    // // {
+    // //     debug_led = 1;
+    // //     Serial_Comms_buffer_In[buffer_pointer_In] = 0x00;
+
+    // //     Print("Got Command\n");
+    // //     Serial_Comms_Queue.call(this, &Serial_Comms::Decode_Command);
+
+    // // } 
+    // // else // Store recieved key in serial comm buffer
+    // // {
+    // //     Serial_Comms_buffer_In[buffer_pointer_In] = gotkey;
+    // //     buffer_pointer_In++;
+
+    // //     pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
+    // // }
+
+    // pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
 }
 
 /*------------------------------------------------------------------------------
@@ -80,31 +101,43 @@ void Serial_Comms::checkKEY(void)
 void Serial_Comms::Decode_Command(void)
 {
     // LCD.clr();
-    std::string S;
+    // std::string S;
 
     // If the message is the correct length for the chosen comm protocol 
     if(buffer_pointer_In == Com_Protocol_Length)
     {
         // Convert the 4 recieved 8-bit chars (Serial_Comms_buffer_In) into one 32-bit Int (Val)
-        int Val = 0;
+        unsigned int Val = 0;
+
         for(int idx = 0; idx < Com_Protocol_Length; idx++)
         {
-            Val = Val + (Serial_Comms_buffer_In[idx] << (8 * idx)); // bit shift LSB to MSB
+            Val = Val + ((0x0000007F & Serial_Comms_buffer_In[idx]) << (7 * idx)); // bit shift LSB to MSB
         }
 
         Recieved_Command_Handler_(Val);
         // Fill debug string
-        char buffer[100];
-        int len = sprintf(buffer, "value is %X", Val);
-        for (int i = 0; i < len; i++) {
-            S = S + buffer[i];
-        }
+        // char buffer[100];
+        // int len = sprintf(buffer, "value is %x \n", Val);
+        // for (int i = 0; i < len; i++) {
+        //     S = S + buffer[i];
+        // }
 
     } 
     else 
     {
+        std::string output;
+        output = "Error : ";
+
         // The recieved message does not match current com protocol length
-        S = "Error : Wrong message size";
+                // Fill debug string
+        char buffer[100];
+        int len = sprintf(buffer, "length is %d \n", buffer_pointer_In);
+        std::string S;
+        for (int i = 0; i < len; i++) {
+            S = S + buffer[i];
+        }
+        output = output + S;
+        Print(output);
     }
     
     //Print debug string
@@ -124,6 +157,30 @@ void Serial_Comms::Input_Handler(void)
     pc.attach(NULL,pc.RxIrq);
     if(pc.readable()!= 0)
     {
+        char gotkey; 
+        pc.read(&gotkey, 1);
+
+        // If recieved key is invalid, ignore
+        if(gotkey == NULL) 
+        {
+            // do nothing
+            pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
+
+        }  // If recieved key is carridge return the execute the stored command
+        else if (gotkey == 0x0D) 
+        {
+            Serial_Comms_buffer_In[buffer_pointer_In] = 0x00;
+            Serial_Comms_Queue.call(this, &Serial_Comms::Decode_Command);
+
+        } 
+        else // Store recieved key in serial comm buffer
+        {
+            Serial_Comms_buffer_In[buffer_pointer_In] = gotkey;
+            buffer_pointer_In++;
+
+            pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq);
+        }
+
         Serial_Comms_Queue.call(this, &Serial_Comms::checkKEY);
     } else {
         pc.attach(callback(this, &Serial_Comms::Input_Handler), pc.RxIrq); 

@@ -7,7 +7,7 @@ through function of the Serial_Comms class.
 #include<string>
 
 // Use generic to set number of rows in table
-#define Com_Protocol_Length 4
+#define Com_Protocol_Length 5
 #define Com_Buffer_Length Com_Protocol_Length*7
 
 

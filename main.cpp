@@ -1,16 +1,17 @@
+#include "DigitalOut.h"
 #include "mbed.h"
 #include <string>
 
 #include "BSPSensors.hpp"
 #include "Serial_Comms.hpp"
-#include "SPI_LCD.hpp"
+// #include "SPI_LCD.hpp"
 #include "Motor_Control.hpp"
 
 /********************************************************************************/
 /************************ Debug and Tests definitions ***************************/
 /********************************************************************************/
 // // Debug LEDs
-DigitalOut led_1(LED1);
+// DigitalOut led_1(LED1);
 // DigitalOut led_2(LED2);
 
 #define ENA1 D13
@@ -21,6 +22,7 @@ DigitalOut led_1(LED1);
 #define IN4 D8
 
 /********************************************************************************/
+
 
 
 /********************************************************************************/
@@ -42,30 +44,8 @@ Serial_Comms PC(USBTX, USBRX, command_Handler);
 
 /********************************************************************************/
   
-// Motor_Control motor( ENA1, IN1, IN2, ENA2, IN3, IN4);
-
-
-
-// // Command called to handle recieved USB data and pass commands on to motors
-void command_Handler(int Data)
-{
-    // in final version int is 32 bits first 4 bits are direction commands, then 24 bits for the speed commands (12 bit command per motor), and the last four bits are a checksum
-    char Direction_Commands = ( (Data & 0xF0000000) >> 28 );
-    short Right_Speed_Command = ( (Data & 0x0FFF0000) >> 16 );
-    short Left_Speed_Command = ( (Data & 0x0000FFF0) >>  4 );
-    char Misc = ( Data & 0x0000000F );
-
-
-    // motor.Left_Motor_Direction = (Direction_Commands & 0x3);
-    // motor.Right_Motor_Direction = ((Direction_Commands >> 2) & 0x3) ;
-
-
-    // motor.Right_Motor_Speed =  float(Right_Speed_Command) / 4095;
-    // motor.Left_Motor_Speed = float(Left_Speed_Command) / 4095;
-
-    return;
-
-}
+Motor_Control motor( ENA1, IN1, IN2, ENA2, IN3, IN4);
+Motor_State Determine_State(char cmd);
 
 
 // // Create BSPSensors object to read sensors at rate specified in Hz, handles collection of data from Gyro, Accellerometer, Magnometer
@@ -77,8 +57,65 @@ void command_Handler(int Data)
 /********************************************************************************/
   
 
+// Command called to handle recieved USB data and pass commands on to motors
+void command_Handler(int Data)
+{
+    // led_1 = !led_1;
+
+    //return int
+    // char buffer[250];
+    // int len = sprintf(buffer, "Val - %d\n", Data); //, Sensor_Data.AccDataXYZ[1], Sensor_Data.AccDataXYZ[2]);      
+    // std::string S;
+    // for (int i = 0; i < len; i++) {
+    //     S = S + buffer[i];
+    // }
+    // PC.Print(S);
+
+    // // in final version int is 32 bits first 4 bits are direction commands, then 24 bits for the speed commands (12 bit command per motor), and the last four bits are a checksum
+    char Direction_Commands = ( (Data & 0xF0000000) >> 28 );
+    short Right_Speed_Command = ( (Data & 0x0FFF0000) >> 16 );
+    short Left_Speed_Command = ( (Data & 0x0000FFF0) >>  4 );
+    char Misc = ( Data & 0x0000000F );
+
+    Motor_State Right_Motor_State = Determine_State(Direction_Commands & 0x3);
+    Motor_State Left_Motor_State = Determine_State((Direction_Commands >> 2) & 0x3);
+
+    motor.set_right_motor_direction(Right_Motor_State);
+    motor.set_left_motor_direction(Left_Motor_State);
+
+    motor.set_right_motor_speed(float(Right_Speed_Command) / 4095);
+    motor.set_left_motor_speed(float(Left_Speed_Command) / 4095);
+
+    return;
+
+}
 
 
+Motor_State Determine_State(char cmd)
+{
+    Motor_State motor_state;
+
+    switch (cmd)
+    {
+        case brake:
+            motor_state = Brake;
+            break;
+
+        case forward:
+            motor_state = Forward;
+            break;
+
+        case backward:
+            motor_state = Backward;
+            break;
+
+        case floating:
+            motor_state = Floating;
+            break;
+    }
+
+    return motor_state;
+}
 
 
 /********************************************************************************/
@@ -88,6 +125,24 @@ void command_Handler(int Data)
 int main()
 {
     while(1) {
+        // led_2 = !led_2;
+        // PC.Print("would be sensor data\n");    
+        // ThisThread::sleep_for(100);
+    }
+}
+
+/********************************************************************************/
+
+
+
+
+
+
+
+
+
+
+
          // while(1)
         // {
         //     EventQueue_1.dispatch_forever();
@@ -126,15 +181,4 @@ int main()
         // PC.Print(S3);    
 
         // // PC.Print("Test line 3\n");    
-        // // PC.Print("Test line 2\n");    
-
-
-        // led_2 = !led_2;
-
-        ThisThread::sleep_for(200);
-    }
-}
-
-/********************************************************************************/
-
-
+        // // PC.Print("Test line 2\n");  
